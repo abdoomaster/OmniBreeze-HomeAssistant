@@ -1,0 +1,64 @@
+from __future__ import annotations
+
+from datetime import timedelta
+import logging
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+
+from .api import OmniBreezeApi
+from .const import (
+    CONF_EMAIL,
+    CONF_PASSWORD,
+    CONF_USER_DOMAIN,
+    CONF_USER_DOMAIN_SECRET,
+    DEFAULT_USER_DOMAIN,
+    DOMAIN,
+    PLATFORMS,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+SCAN_INTERVAL = timedelta(seconds=15)
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    api = OmniBreezeApi(
+        email=entry.data[CONF_EMAIL],
+        password=entry.data[CONF_PASSWORD],
+        user_domain=entry.data.get(CONF_USER_DOMAIN, DEFAULT_USER_DOMAIN),
+        user_domain_secret=entry.data[CONF_USER_DOMAIN_SECRET],
+    )
+
+    async def async_update_data():
+        return await hass.async_add_executor_job(api.refresh_all)
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name="OmniBreeze Fan",
+        update_method=async_update_data,
+        update_interval=SCAN_INTERVAL,
+    )
+
+    await coordinator.async_config_entry_first_refresh()
+
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = {
+        "api": api,
+        "coordinator": coordinator,
+    }
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+
+    return unload_ok

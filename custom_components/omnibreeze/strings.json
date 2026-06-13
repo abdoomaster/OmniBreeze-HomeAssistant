@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OmniBreeze Fan",
+        "description": "Enter your Landbook / NetPrisma account details.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "user_domain": "User domain",
+          "user_domain_secret": "User domain secret"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect or log in. Check your credentials and region settings."
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  }
+}

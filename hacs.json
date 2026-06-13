@@ -1,0 +1,6 @@
+{
+  "name": "OmniBreeze Fan",
+  "render_readme": true,
+  "domains": ["fan", "sensor", "switch"],
+  "homeassistant": "2024.8.0"
+}
