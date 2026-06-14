@@ -27,7 +27,7 @@ After installing:
 - HACS installed
 - A working Landbook / NetPrisma account
 - At least one OmniBreeze Wi-Fi fan already paired with your account
-- NetPrisma user domain secret for your region
+- NetPrisma user domain secret for your region. The default US value is pre-filled during setup.
 
 ## What it does
 
@@ -73,7 +73,7 @@ Default US user domain:
 
     U.SP.8589934603
 
-You also need the matching NetPrisma user domain secret used by the Landbook app.
+The default US NetPrisma user domain secret is pre-filled during setup. Most US users should not need to change it.
 
 ## Created entities
 

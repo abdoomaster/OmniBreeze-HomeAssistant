@@ -6,6 +6,7 @@ CONF_USER_DOMAIN = "user_domain"
 CONF_USER_DOMAIN_SECRET = "user_domain_secret"
 
 DEFAULT_USER_DOMAIN = "U.SP.8589934603"
+DEFAULT_USER_DOMAIN_SECRET = "pUTp5goB1bLinprRQMmK3EPiiuPiGrJtKUNptWRXVmP"
 
 API_BASE = "https://iot-api.netprisma.us"
 MQTT_URL = "wss://iot-south.netprisma.us:8443/ws/v2"

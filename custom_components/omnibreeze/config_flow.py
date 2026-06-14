@@ -15,6 +15,7 @@ from .const import (
     CONF_USER_DOMAIN,
     CONF_USER_DOMAIN_SECRET,
     DEFAULT_USER_DOMAIN,
+    DEFAULT_USER_DOMAIN_SECRET,
     DOMAIN,
 )
 
@@ -26,7 +27,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_EMAIL): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Optional(CONF_USER_DOMAIN, default=DEFAULT_USER_DOMAIN): str,
-        vol.Required(CONF_USER_DOMAIN_SECRET): str,
+        vol.Optional(CONF_USER_DOMAIN_SECRET, default=DEFAULT_USER_DOMAIN_SECRET): str,
     }
 )
 
