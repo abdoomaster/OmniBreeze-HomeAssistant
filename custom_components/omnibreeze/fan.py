@@ -1,6 +1,4 @@
 from __future__ import annotations
-import os
-
 from typing import Any
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
@@ -21,30 +19,15 @@ async def async_setup_entry(
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
     api = data["api"]
+    fan_speed_count = data.get("fan_speed_count", 3)
 
     entities = [
-        OmniBreezeFan(coordinator, api, device_key)
+        OmniBreezeFan(coordinator, api, device_key, fan_speed_count)
         for device_key in coordinator.data
     ]
 
     async_add_entities(entities)
 
-
-def _fan_speed_count() -> int:
-    """Return configured OmniBreeze fan speed count.
-
-    Defaults to 3 for backwards compatibility.
-    Set OMNIBREEZE_FAN_SPEED_COUNT=5 for 5-speed models.
-    """
-    try:
-        value = int(os.environ.get("OMNIBREEZE_FAN_SPEED_COUNT", "3"))
-    except ValueError:
-        value = 3
-
-    return max(1, min(12, value))
-
-
-FAN_SPEED_COUNT = _fan_speed_count()
 
 class OmniBreezeFan(CoordinatorEntity, FanEntity):
     _attr_supported_features = (
@@ -53,12 +36,12 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         | FanEntityFeature.TURN_ON
         | FanEntityFeature.TURN_OFF
     )
-    _attr_speed_count = 3
 
-    def __init__(self, coordinator, api, device_key: str) -> None:
+    def __init__(self, coordinator, api, device_key: str, fan_speed_count: int) -> None:
         super().__init__(coordinator)
         self.api = api
         self.device_key = device_key
+        self._attr_speed_count = fan_speed_count
 
         device = self.device
         self._attr_name = device.name
@@ -92,7 +75,7 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         if speed <= 0:
             return 0
 
-        return round((speed / 3) * 100)
+        return round((speed / self._attr_speed_count) * 100)
 
     @property
     def oscillating(self) -> bool | None:
@@ -139,8 +122,8 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         if percentage <= 0:
             action = "off"
         else:
-            speed = round((percentage / 100) * FAN_SPEED_COUNT)
-            speed = max(1, min(FAN_SPEED_COUNT, speed))
+            speed = round((percentage / 100) * self._attr_speed_count)
+            speed = max(1, min(self._attr_speed_count, speed))
             action = f"speed:{speed}"
 
         await self.hass.async_add_executor_job(

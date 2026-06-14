@@ -13,7 +13,9 @@ from .const import (
     CONF_PASSWORD,
     CONF_USER_DOMAIN,
     CONF_USER_DOMAIN_SECRET,
+    CONF_FAN_SPEED_COUNT,
     DEFAULT_USER_DOMAIN,
+    DEFAULT_FAN_SPEED_COUNT,
     DOMAIN,
     PLATFORMS,
 )
@@ -60,6 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = {
         "api": api,
         "coordinator": coordinator,
+        "fan_speed_count": entry.data.get(CONF_FAN_SPEED_COUNT, DEFAULT_FAN_SPEED_COUNT),
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
