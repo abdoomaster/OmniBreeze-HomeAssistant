@@ -8,7 +8,8 @@
           "email": "Email",
           "password": "Password",
           "user_domain": "User domain",
-          "user_domain_secret": "User domain secret"
+          "user_domain_secret": "User domain secret",
+          "fan_speed_count": "Fan speed count"
         }
       }
     },
@@ -17,6 +18,17 @@
     },
     "abort": {
       "already_configured": "This account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OmniBreeze options",
+        "description": "Adjust how the OmniBreeze fans are exposed in Home Assistant.",
+        "data": {
+          "fan_speed_count": "Fan speed count"
+        }
+      }
     }
   }
 }
