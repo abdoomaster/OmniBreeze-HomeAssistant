@@ -27,7 +27,7 @@ After installing:
 - HACS installed
 - A working Landbook / NetPrisma account
 - At least one OmniBreeze Wi-Fi fan already paired with your account
-- NetPrisma user domain secret for your region. The default US value is pre-filled during setup.
+- Internet access
 
 ## What it does
 
@@ -36,8 +36,10 @@ After installing:
 - Supports power on/off
 - Supports 3-speed fan control
 - Supports oscillation control
-- Adds a sound/beep toggle switch
-- Adds temperature, battery, and signal sensors when available
+- Adds a sound/beep switch
+- Adds auto-mute on integration startup
+- Adds temperature, battery, signal strength, and online status entities
+- Adds an options menu for scan interval and auto-mute
 - Uses Home Assistant's normal UI setup flow
 
 ## Important note
@@ -48,25 +50,14 @@ The fans still use the stock Landbook / NetPrisma cloud connection. This integra
 
 There is no separate dashboard, no Docker bridge, and no YAML REST template setup required.
 
-## Installation with HACS
-
-1. Open HACS in Home Assistant.
-2. Go to Integrations.
-3. Open the three-dot menu.
-4. Choose Custom repositories.
-5. Add this repository URL.
-6. Select category: Integration.
-7. Install OmniBreeze Fan.
-8. Restart Home Assistant.
-
 ## Setup
 
 After restarting Home Assistant:
 
-1. Go to Settings.
-2. Go to Devices & services.
-3. Click Add integration.
-4. Search for OmniBreeze Fan.
+1. Go to **Settings**.
+2. Go to **Devices & services**.
+3. Click **Add integration**.
+4. Search for **OmniBreeze Fan**.
 5. Enter your Landbook / NetPrisma account details.
 
 Default US user domain:
@@ -83,9 +74,55 @@ For each fan, Home Assistant creates a device with entities similar to:
     sensor.kitchen_fan_temperature
     sensor.kitchen_fan_battery
     sensor.kitchen_fan_signal_strength
+    binary_sensor.kitchen_fan_online
     switch.kitchen_fan_sound
 
 Entity names depend on the fan names in your Landbook / NetPrisma account.
+
+## Options
+
+The integration includes an options menu under:
+
+    Settings → Devices & services → OmniBreeze Fan → Configure
+
+Current options:
+
+- Scan interval
+- Auto mute fan sound on startup
+- Show diagnostic sensors
+
+## Auto mute
+
+The integration can send `sound_off` once when it starts.
+
+This helps reduce the annoying fan beep when possible. It does not send an extra mute command after every control action because that can cause double beeps.
+
+If the user manually turns the sound switch back on, the integration leaves it on until the next Home Assistant or integration restart.
+
+## Fan modes
+
+The Landbook app has fan modes:
+
+- Normal
+- Natural
+- Sleep
+- Auto
+
+Mode support is still being tested. Some captured packets appear to be status updates instead of working control commands, so mode control may not work reliably yet.
+
+## Screenshots
+
+### Integration devices
+
+![OmniBreeze integration devices](assets/screenshots/devices.png)
+
+### Home Assistant entities
+
+![OmniBreeze Home Assistant entities](assets/screenshots/entities.png)
+
+### Fan controls
+
+![OmniBreeze fan controls](assets/screenshots/fan-controls.png)
 
 ## Related project: Docker dashboard
 
@@ -104,27 +141,35 @@ Use the Docker dashboard if you want:
 - Home Assistant YAML examples
 - A setup that can also be used outside Home Assistant
 
-
-## Screenshots
-
-### Integration devices
-
-![OmniBreeze integration devices](assets/screenshots/devices.png)
-
-### Home Assistant entities
-
-![OmniBreeze Home Assistant entities](assets/screenshots/entities.png)
-
-### Fan controls
-
-![OmniBreeze fan controls](assets/screenshots/fan-controls.png)
-
 ## Known limitations
 
 - Requires internet access
 - Depends on the Landbook / NetPrisma cloud API
 - May break if the vendor changes login, API endpoints, MQTT behavior, or app signing
+- Fan mode control is still experimental
 - Currently tested with the Costco OmniBreeze Wi-Fi Tower Fan
+
+## Troubleshooting
+
+### The integration does not appear in Home Assistant
+
+Restart Home Assistant after installing through HACS.
+
+### Config flow could not be loaded
+
+Check Home Assistant logs for `omnibreeze` errors. This usually means a missing dependency, an old copied file, or a bad custom component install.
+
+### Fan controls work but state is delayed
+
+The integration polls the cloud API. State may take a few seconds to refresh.
+
+### Beep still happens
+
+The integration turns the fan sound setting off on startup. Some beep behavior may still be controlled by the fan firmware and may not be fully suppressible.
+
+### Mode always goes back to Normal
+
+Mode support is still experimental. The app packets captured so far may be state reports rather than valid control commands.
 
 ## Disclaimer
 
