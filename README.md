@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/omnibreeze-banner.png" alt="OmniBreeze Fan Home Assistant Integration" width="900">
+</p>
+
 # OmniBreeze Home Assistant Integration
 
 Unofficial Home Assistant custom integration for the Costco OmniBreeze Wi-Fi Tower Fan.
