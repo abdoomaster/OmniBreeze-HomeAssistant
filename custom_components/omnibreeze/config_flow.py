@@ -14,8 +14,12 @@ from .const import (
     CONF_PASSWORD,
     CONF_USER_DOMAIN,
     CONF_USER_DOMAIN_SECRET,
+    CONF_FAN_SPEED_COUNT,
     DEFAULT_USER_DOMAIN,
     DEFAULT_USER_DOMAIN_SECRET,
+    DEFAULT_FAN_SPEED_COUNT,
+    MIN_FAN_SPEED_COUNT,
+    MAX_FAN_SPEED_COUNT,
     DOMAIN,
 )
 
@@ -28,6 +32,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_PASSWORD): str,
         vol.Optional(CONF_USER_DOMAIN, default=DEFAULT_USER_DOMAIN): str,
         vol.Optional(CONF_USER_DOMAIN_SECRET, default=DEFAULT_USER_DOMAIN_SECRET): str,
+        vol.Optional(CONF_FAN_SPEED_COUNT, default=DEFAULT_FAN_SPEED_COUNT): vol.All(
+            vol.Coerce(int), vol.Range(min=MIN_FAN_SPEED_COUNT, max=MAX_FAN_SPEED_COUNT)
+        ),
     }
 )
 
