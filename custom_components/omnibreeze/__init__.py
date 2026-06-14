@@ -44,6 +44,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
+    async def async_mute_fans_once():
+        def mute_fans_once():
+            for device in coordinator.data.values():
+                # Always send sound_off once when the integration starts.
+                # Some fans report sound as off even when they still beep.
+                api.send_action(device, "sound_off")
+
+        await hass.async_add_executor_job(mute_fans_once)
+        await coordinator.async_request_refresh()
+
+    await async_mute_fans_once()
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "api": api,
