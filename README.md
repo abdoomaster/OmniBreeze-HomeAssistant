@@ -8,6 +8,27 @@ Unofficial Home Assistant custom integration for the Costco OmniBreeze Wi-Fi Tow
 
 This integration lets Home Assistant discover and control OmniBreeze fans that use the Landbook / NetPrisma app, without running a separate Docker bridge.
 
+## Quick install
+
+[![Open your Home Assistant instance and add this repository to HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=abdoomaster&repository=OmniBreeze-HomeAssistant&category=integration)
+
+Click the button above on a device that has access to your Home Assistant instance. It opens the **Add custom repository** dialog in HACS with this repository pre-filled.
+
+After installing:
+
+1. Restart Home Assistant.
+2. Go to **Settings → Devices & services → Add integration**.
+3. Search for **OmniBreeze Fan**.
+4. Sign in with your Landbook / NetPrisma account.
+
+## Requirements
+
+- Home Assistant 2024.8 or newer
+- HACS installed
+- A working Landbook / NetPrisma account
+- At least one OmniBreeze Wi-Fi fan already paired with your account
+- NetPrisma user domain secret for your region
+
 ## What it does
 
 - Creates native Home Assistant fan entities
