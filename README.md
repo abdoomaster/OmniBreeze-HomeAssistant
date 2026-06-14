@@ -174,3 +174,17 @@ Mode support is still experimental. The app packets captured so far may be state
 ## Disclaimer
 
 This is an unofficial community integration. It is not affiliated with OmniBreeze, Costco, Landbook, or NetPrisma.
+
+## Fan speed count
+
+By default, the integration assumes a 3-speed fan.
+
+Some OmniBreeze models, such as 5-speed tower fans, support more speeds. To expose those speeds in Home Assistant, set this environment variable for your Home Assistant container:
+
+    OMNIBREEZE_FAN_SPEED_COUNT=5
+
+If unset, the integration defaults to:
+
+    OMNIBREEZE_FAN_SPEED_COUNT=3
+
+The value is clamped between `1` and `12`.
