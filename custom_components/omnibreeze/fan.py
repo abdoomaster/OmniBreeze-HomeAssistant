@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 from typing import Any
 
@@ -28,6 +29,22 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
+
+def _fan_speed_count() -> int:
+    """Return configured OmniBreeze fan speed count.
+
+    Defaults to 3 for backwards compatibility.
+    Set OMNIBREEZE_FAN_SPEED_COUNT=5 for 5-speed models.
+    """
+    try:
+        value = int(os.environ.get("OMNIBREEZE_FAN_SPEED_COUNT", "3"))
+    except ValueError:
+        value = 3
+
+    return max(1, min(12, value))
+
+
+FAN_SPEED_COUNT = _fan_speed_count()
 
 class OmniBreezeFan(CoordinatorEntity, FanEntity):
     _attr_supported_features = (
@@ -121,12 +138,10 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
     async def async_set_percentage(self, percentage: int) -> None:
         if percentage <= 0:
             action = "off"
-        elif percentage <= 34:
-            action = "speed:1"
-        elif percentage <= 67:
-            action = "speed:2"
         else:
-            action = "speed:3"
+            speed = round((percentage / 100) * FAN_SPEED_COUNT)
+            speed = max(1, min(FAN_SPEED_COUNT, speed))
+            action = f"speed:{speed}"
 
         await self.hass.async_add_executor_job(
             self.api.send_action,
