@@ -1,12 +1,18 @@
 {
   "domain": "omnibreeze",
   "name": "OmniBreeze Fan",
-  "codeowners": ["@abdoomaster"],
+  "codeowners": [
+    "@abdoomaster"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/abdoomaster/OmniBreeze-fan-dashboard",
   "issue_tracker": "https://github.com/abdoomaster/OmniBreeze-fan-dashboard/issues",
   "iot_class": "cloud_polling",
-  "requirements": ["httpx>=0.27.0", "websocket-client>=1.8.0", "pycryptodome>=3.20.0"],
-  "version": "0.1.0"
+  "requirements": [
+    "httpx>=0.27.0",
+    "websocket-client>=1.8.0",
+    "pycryptodome>=3.20.0"
+  ],
+  "version": "0.2.4"
 }

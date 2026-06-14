@@ -26,6 +26,10 @@ ACTIONS = {
     "sound_off": (0x0068, None),
     "osc_on": (0x0029, None),
     "osc_off": (0x0028, None),
+    "mode_normal": (0x0012, 0),
+    "mode_natural": (0x0012, 1),
+    "mode_sleep": (0x0012, 2),
+    "mode_auto": (0x0012, 3),
 }
 
 
@@ -236,13 +240,17 @@ class OmniBreezeApi:
             if not device_key or not product_key:
                 continue
 
+            previous_state = {}
+            if device_key in self.devices and self.devices[device_key].state:
+                previous_state = dict(self.devices[device_key].state or {})
+
             device = OmniBreezeDevice(
                 device_key=device_key,
                 name=item.get("deviceName") or device_key,
                 product_key=product_key,
                 product_name=item.get("productName"),
                 online=bool(item.get("onlineStatus")),
-                state={},
+                state=previous_state,
             )
 
             self.devices[device_key] = device
@@ -286,6 +294,11 @@ class OmniBreezeApi:
             if code:
                 attrs[code] = item.get("resourceValce")
 
+        mode_value = self.parse_int(
+            attrs.get("working_mode"),
+            (device.state or {}).get("mode", 0),
+        )
+
         state = {
             "online": device.online,
             "product_key": device.product_key,
@@ -296,6 +309,7 @@ class OmniBreezeApi:
             "oscillation": "on" if self.parse_bool(attrs.get("swing_wind")) else "off",
             "sound": "on" if self.parse_bool(attrs.get("sound")) else "off",
             "light": "on" if self.parse_bool(attrs.get("screen_display")) else "off",
+            "mode": mode_value,
             "battery": device_data.get("battery"),
             "voltage": device_data.get("voltage"),
             "signal_strength": device_data.get("signalStrength"),
@@ -361,11 +375,16 @@ class OmniBreezeApi:
         body = self.utf8_field(topic) + packet_id.to_bytes(2, "big") + payload
         return bytes([0x33]) + self.enc_remaining_length(len(body)) + body
 
-    def build_payload(self, control_id: int, value: int | None = None) -> bytes:
+    def build_payload(
+        self,
+        control_id: int,
+        value: int | None = None,
+        msg_type: int = 0x0013,
+    ) -> bytes:
         seq = int(time.time() * 1000) & 0xFFFF
         body_without_checksum = (
             seq.to_bytes(2, "big")
-            + b"\x00\x13"
+            + msg_type.to_bytes(2, "big")
             + control_id.to_bytes(2, "big")
         )
 
@@ -449,3 +468,19 @@ class OmniBreezeApi:
             except Exception:
                 pass
             ws.close()
+    def send_action_with_optional_mute(
+        self,
+        device: OmniBreezeDevice,
+        action: str,
+        auto_mute: bool = True,
+    ) -> None:
+        """Send a fan command, then optionally turn the fan beep/sound off.
+
+        This keeps normal fan controls quiet after the first command.
+        We intentionally do not auto-mute sound_off itself.
+        """
+        self.send_action(device, action)
+
+        if auto_mute and action != "sound_off":
+            time.sleep(0.35)
+            self.send_action(device, "sound_off")
