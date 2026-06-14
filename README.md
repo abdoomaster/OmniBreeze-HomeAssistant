@@ -87,13 +87,22 @@ For each fan, Home Assistant creates a device with entities similar to:
 
 Entity names depend on the fan names in your Landbook / NetPrisma account.
 
-## Repository split
+## Related project: Docker dashboard
 
-This repository is for the native Home Assistant / HACS integration.
+This HACS integration is for users who want native Home Assistant entities without running a separate bridge.
 
-The Docker dashboard and REST bridge live in the original project:
+The original Docker dashboard and REST API bridge are available here:
 
-    https://github.com/abdoomaster/OmniBreeze-fan-dashboard
+**OmniBreeze Fan Dashboard**  
+https://github.com/abdoomaster/OmniBreeze-fan-dashboard
+
+Use the Docker dashboard if you want:
+
+- A standalone local web dashboard
+- A REST API bridge
+- Docker Compose deployment
+- Home Assistant YAML examples
+- A setup that can also be used outside Home Assistant
 
 
 ## Screenshots
