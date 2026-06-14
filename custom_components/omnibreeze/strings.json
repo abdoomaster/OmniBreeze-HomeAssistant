@@ -8,7 +8,8 @@
           "email": "Email",
           "password": "Password",
           "user_domain": "User domain",
-          "user_domain_secret": "User domain secret"
+          "user_domain_secret": "User domain secret",
+          "fan_speed_count": "Fan speed count"
         }
       }
     },
