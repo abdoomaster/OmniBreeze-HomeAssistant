@@ -58,16 +58,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await async_mute_fans_once()
 
+    fan_speed_count = entry.options.get(
+        CONF_FAN_SPEED_COUNT,
+        entry.data.get(CONF_FAN_SPEED_COUNT, DEFAULT_FAN_SPEED_COUNT),
+    )
+
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "api": api,
         "coordinator": coordinator,
-        "fan_speed_count": entry.data.get(CONF_FAN_SPEED_COUNT, DEFAULT_FAN_SPEED_COUNT),
+        "fan_speed_count": fan_speed_count,
     }
+
+    # Reload the entry when its options change so a new speed count takes effect.
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

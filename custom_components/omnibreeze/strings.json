@@ -19,5 +19,16 @@
     "abort": {
       "already_configured": "This account is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OmniBreeze options",
+        "description": "Adjust how the OmniBreeze fans are exposed in Home Assistant.",
+        "data": {
+          "fan_speed_count": "Fan speed count"
+        }
+      }
+    }
   }
 }

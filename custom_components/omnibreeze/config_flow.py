@@ -6,7 +6,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 
 from .api import OmniBreezeApi
 from .const import (
@@ -66,6 +66,13 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 class OmniBreezeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> "OmniBreezeOptionsFlow":
+        return OmniBreezeOptionsFlow()
+
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
 
@@ -89,3 +96,25 @@ class OmniBreezeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=STEP_USER_DATA_SCHEMA,
             errors=errors,
         )
+
+
+class OmniBreezeOptionsFlow(config_entries.OptionsFlow):
+    async def async_step_init(self, user_input: dict[str, Any] | None = None):
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current = self.config_entry.options.get(
+            CONF_FAN_SPEED_COUNT,
+            self.config_entry.data.get(CONF_FAN_SPEED_COUNT, DEFAULT_FAN_SPEED_COUNT),
+        )
+
+        options_schema = vol.Schema(
+            {
+                vol.Optional(CONF_FAN_SPEED_COUNT, default=current): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_FAN_SPEED_COUNT, max=MAX_FAN_SPEED_COUNT),
+                ),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=options_schema)
