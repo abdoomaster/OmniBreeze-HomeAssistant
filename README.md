@@ -74,6 +74,21 @@ The Docker dashboard and REST bridge live in the original project:
 
     https://github.com/abdoomaster/OmniBreeze-fan-dashboard
 
+
+## Screenshots
+
+### Integration devices
+
+![OmniBreeze integration devices](assets/screenshots/devices.png)
+
+### Home Assistant entities
+
+![OmniBreeze Home Assistant entities](assets/screenshots/entities.png)
+
+### Fan controls
+
+![OmniBreeze fan controls](assets/screenshots/fan-controls.png)
+
 ## Known limitations
 
 - Requires internet access
