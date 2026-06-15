@@ -15,4 +15,4 @@ MAX_FAN_SPEED_COUNT = 12
 API_BASE = "https://iot-api.netprisma.us"
 MQTT_URL = "wss://iot-south.netprisma.us:8443/ws/v2"
 
-PLATFORMS = ["fan", "sensor", "switch"]
+PLATFORMS = ["fan", "sensor", "switch", "select"]

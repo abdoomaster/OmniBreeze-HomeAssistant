@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from typing import Any
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
@@ -119,18 +120,48 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
+        """Set fan speed percentage.
+
+        If the fan is off and only a speed command is sent, some OmniBreeze
+        models beep but stay off. Send speed first, then power on.
+        """
         if percentage <= 0:
-            action = "off"
-        else:
-            speed = round((percentage / 100) * self._attr_speed_count)
-            speed = max(1, min(self._attr_speed_count, speed))
-            action = f"speed:{speed}"
+            await self.hass.async_add_executor_job(
+                self.api.send_action,
+                self.device,
+                "off",
+            )
+            await self.coordinator.async_request_refresh()
+            return
+
+        was_off = not self.is_on
+
+        speed = round((percentage / 100) * self._attr_speed_count)
+        speed = max(1, min(self._attr_speed_count, speed))
+        action = f"speed:{speed}"
 
         await self.hass.async_add_executor_job(
             self.api.send_action,
             self.device,
             action,
         )
+
+        if was_off:
+            await asyncio.sleep(0.5)
+            await self.hass.async_add_executor_job(
+                self.api.send_action,
+                self.device,
+                "on",
+            )
+
+        if self.state_data.get("sound") == "on":
+            await asyncio.sleep(0.2)
+            await self.hass.async_add_executor_job(
+                self.api.send_action,
+                self.device,
+                "sound_off",
+            )
+
         await self.coordinator.async_request_refresh()
 
     async def async_oscillate(self, oscillating: bool) -> None:
