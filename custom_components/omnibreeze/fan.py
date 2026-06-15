@@ -103,10 +103,11 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         await self.coordinator.async_request_refresh()
 
     async def _async_mute_if_running(self) -> bool:
-        """Turn sound off only when the fan is actually on."""
-        if not self.is_on:
-            return False
+        """Turn sound off whenever the device reports sound on.
 
+        The Wi-Fi module stays online even when fan power is off, and testing
+        confirmed sound_off is accepted while the fan is off.
+        """
         if self.state_data.get("sound") != "on":
             return False
 
@@ -150,8 +151,10 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._async_refresh_current_state()
 
-        # If the physical remote already turned the fan off, just update HA.
+        # If the physical remote already turned the fan off, update HA and
+        # still mute sound if the Wi-Fi module reports sound on.
         if not self.is_on:
+            await self._async_mute_if_running()
             self.async_write_ha_state()
             return
 
@@ -171,10 +174,8 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
 
         was_off = not self.is_on
 
-        # If the fan is actually on and sound is on, mute immediately.
-        # If the fan is off, do not waste a sound_off command.
-        if not was_off:
-            await self._async_mute_if_running()
+        # Mute immediately if sound is on, even when fan power is off.
+        await self._async_mute_if_running()
 
         speed = round((percentage / 100) * self._attr_speed_count)
         speed = max(1, min(self._attr_speed_count, speed))
@@ -206,8 +207,10 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
     async def async_oscillate(self, oscillating: bool) -> None:
         await self._async_refresh_current_state()
 
-        # If remote control already turned the fan off, update HA and stop.
+        # If remote control already turned the fan off, update HA, but still
+        # mute sound if the Wi-Fi module reports sound on.
         if not self.is_on:
+            await self._async_mute_if_running()
             self.async_write_ha_state()
             return
 
