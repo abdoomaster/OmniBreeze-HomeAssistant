@@ -94,6 +94,31 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
             "firmware": self.state_data.get("firmware"),
         }
 
+    async def _async_refresh_current_state(self) -> None:
+        """Refresh current state before sending commands.
+
+        This helps when the physical remote was used and HA/dashboard still
+        thinks the fan is on.
+        """
+        await self.coordinator.async_request_refresh()
+
+    async def _async_mute_if_running(self) -> bool:
+        """Turn sound off only when the fan is actually on."""
+        if not self.is_on:
+            return False
+
+        if self.state_data.get("sound") != "on":
+            return False
+
+        await self.hass.async_add_executor_job(
+            self.api.send_action,
+            self.device,
+            "sound_off",
+        )
+        await asyncio.sleep(0.2)
+        await self.coordinator.async_request_refresh()
+        return True
+
     async def async_turn_on(
         self,
         percentage: int | None = None,
@@ -104,14 +129,32 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
             await self.async_set_percentage(percentage)
             return
 
+        await self._async_refresh_current_state()
+
+        if self.is_on:
+            await self._async_mute_if_running()
+            return
+
         await self.hass.async_add_executor_job(
             self.api.send_action,
             self.device,
             "on",
         )
+
+        await asyncio.sleep(0.7)
         await self.coordinator.async_request_refresh()
 
+        if self.is_on:
+            await self._async_mute_if_running()
+
     async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._async_refresh_current_state()
+
+        # If the physical remote already turned the fan off, just update HA.
+        if not self.is_on:
+            self.async_write_ha_state()
+            return
+
         await self.hass.async_add_executor_job(
             self.api.send_action,
             self.device,
@@ -120,21 +163,18 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
-        """Set fan speed percentage.
+        await self._async_refresh_current_state()
 
-        If the fan is off and only a speed command is sent, some OmniBreeze
-        models beep but stay off. Send speed first, then power on.
-        """
         if percentage <= 0:
-            await self.hass.async_add_executor_job(
-                self.api.send_action,
-                self.device,
-                "off",
-            )
-            await self.coordinator.async_request_refresh()
+            await self.async_turn_off()
             return
 
         was_off = not self.is_on
+
+        # If the fan is actually on and sound is on, mute immediately.
+        # If the fan is off, do not waste a sound_off command.
+        if not was_off:
+            await self._async_mute_if_running()
 
         speed = round((percentage / 100) * self._attr_speed_count)
         speed = max(1, min(self._attr_speed_count, speed))
@@ -146,6 +186,9 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
             action,
         )
 
+        # OmniBreeze quirk:
+        # If speed is selected while off, the fan may beep but stay off.
+        # Send speed first, then power on.
         if was_off:
             await asyncio.sleep(0.5)
             await self.hass.async_add_executor_job(
@@ -154,17 +197,22 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
                 "on",
             )
 
-        if self.state_data.get("sound") == "on":
-            await asyncio.sleep(0.2)
-            await self.hass.async_add_executor_job(
-                self.api.send_action,
-                self.device,
-                "sound_off",
-            )
-
+        await asyncio.sleep(0.7)
         await self.coordinator.async_request_refresh()
 
+        if self.is_on:
+            await self._async_mute_if_running()
+
     async def async_oscillate(self, oscillating: bool) -> None:
+        await self._async_refresh_current_state()
+
+        # If remote control already turned the fan off, update HA and stop.
+        if not self.is_on:
+            self.async_write_ha_state()
+            return
+
+        await self._async_mute_if_running()
+
         action = "osc_on" if oscillating else "osc_off"
 
         await self.hass.async_add_executor_job(
