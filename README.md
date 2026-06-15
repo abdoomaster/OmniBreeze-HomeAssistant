@@ -177,14 +177,23 @@ This is an unofficial community integration. It is not affiliated with OmniBreez
 
 ## Fan speed count
 
-By default, the integration assumes a 3-speed fan.
+During setup, the integration includes a `fan_speed_count` field.
 
-Some OmniBreeze models, such as 5-speed tower fans, support more speeds. To expose those speeds in Home Assistant, set this environment variable for your Home Assistant container:
+By default, this is set to `3`, which matches the common 3-speed OmniBreeze tower fans. If your fan has more speeds, change this value during setup.
 
-    OMNIBREEZE_FAN_SPEED_COUNT=5
+Examples:
 
-If unset, the integration defaults to:
+    3-speed fan: fan_speed_count = 3
+    5-speed fan: fan_speed_count = 5
 
-    OMNIBREEZE_FAN_SPEED_COUNT=3
+For a 5-speed fan, Home Assistant maps the speed slider like this:
+
+    20%  = speed 1
+    40%  = speed 2
+    60%  = speed 3
+    80%  = speed 4
+    100% = speed 5
 
 The value is clamped between `1` and `12`.
+
+If you already added the integration before this option existed, remove and re-add the OmniBreeze integration from Home Assistant so the setup page asks for `fan_speed_count`.
