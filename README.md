@@ -23,24 +23,29 @@ After installing:
 
 ## Requirements
 
-- Home Assistant 2024.8 or newer
-- HACS installed
-- A working Landbook / NetPrisma account
-- At least one OmniBreeze Wi-Fi fan already paired with your account
-- Internet access
+* Home Assistant 2024.8 or newer
+* HACS installed
+* A working Landbook / NetPrisma account
+* At least one OmniBreeze Wi-Fi fan already paired with your account
+* Internet access
 
 ## What it does
 
-- Creates native Home Assistant fan entities
-- Discovers fans automatically from your Landbook / NetPrisma account
-- Supports power on/off
-- Supports 3-speed fan control
-- Supports oscillation control
-- Adds a sound/beep switch
-- Adds auto-mute on integration startup
-- Adds temperature, battery, signal strength, and online status entities
-- Adds an options menu for scan interval and auto-mute
-- Uses Home Assistant's normal UI setup flow
+* Creates native Home Assistant fan entities
+* Discovers fans automatically from your Landbook / NetPrisma account
+* Supports power on/off
+* Supports 3-speed and 5-speed fan control
+* Supports configurable fan speed count during setup
+* Supports oscillation control
+* Adds a sound/beep switch
+* Adds a display light entity for the fan screen
+* Adds a countdown timer select entity
+* Adds mode select support for Normal, Natural, Sleep, and Auto
+* Adds temperature, battery, signal strength, firmware, and online status entities
+* Adds an options menu for scan interval, auto-mute, diagnostic sensors, and fan speed count
+* Refreshes fan state before commands so physical remote-control changes are detected
+* Can turn the fan on automatically when selecting a speed while the fan is off
+* Uses Home Assistant's normal UI setup flow
 
 ## Important note
 
@@ -62,7 +67,9 @@ After restarting Home Assistant:
 
 Default US user domain:
 
-    U.SP.8589934603
+```
+U.SP.8589934603
+```
 
 The default US NetPrisma user domain secret is pre-filled during setup. Most US users should not need to change it.
 
@@ -70,45 +77,175 @@ The default US NetPrisma user domain secret is pre-filled during setup. Most US 
 
 For each fan, Home Assistant creates a device with entities similar to:
 
-    fan.kitchen_fan
-    sensor.kitchen_fan_temperature
-    sensor.kitchen_fan_battery
-    sensor.kitchen_fan_signal_strength
-    binary_sensor.kitchen_fan_online
-    switch.kitchen_fan_sound
+```
+fan.kitchen_fan
+light.kitchen_fan_display
+select.kitchen_fan_mode
+select.kitchen_fan_countdown
+switch.kitchen_fan_sound
+sensor.kitchen_fan_temperature
+sensor.kitchen_fan_battery
+sensor.kitchen_fan_signal_strength
+sensor.kitchen_fan_firmware
+binary_sensor.kitchen_fan_online
+```
 
 Entity names depend on the fan names in your Landbook / NetPrisma account.
 
-## Options
+## Fan controls
 
-The integration includes an options menu under:
+The main fan entity supports:
 
-    Settings → Devices & services → OmniBreeze Fan → Configure
+* Power on/off
+* Speed control
+* Oscillation control
 
-Current options:
+For a 5-speed fan, Home Assistant maps the speed slider like this:
 
-- Scan interval
-- Auto mute fan sound on startup
-- Show diagnostic sensors
+```
+20%  = speed 1
+40%  = speed 2
+60%  = speed 3
+80%  = speed 4
+100% = speed 5
+```
 
-## Auto mute
+If you select a speed while the fan is off, the integration sends the speed command first, then turns the fan on.
 
-The integration can send `sound_off` once when it starts.
+## Display light
 
-This helps reduce the annoying fan beep when possible. It does not send an extra mute command after every control action because that can cause double beeps.
+The display light entity controls the fan's front display/screen light.
 
-If the user manually turns the sound switch back on, the integration leaves it on until the next Home Assistant or integration restart.
+Example entity:
+
+```
+light.kitchen_fan_display
+```
+
+This uses the Landbook / NetPrisma `screen_display` TSL property.
+
+## Countdown timer
+
+The countdown select entity supports:
+
+* Cancel
+* 1 Hour
+* 2 Hours
+* 3 Hours
+* 4 Hours
+* 5 Hours
+* 6 Hours
+* 7 Hours
+* 8 Hours
+* 9 Hours
+* 10 Hours
+* 11 Hours
+* 12 Hours
+
+Example entity:
+
+```
+select.kitchen_fan_countdown
+```
+
+This uses the Landbook / NetPrisma `countdown` TSL property.
 
 ## Fan modes
 
 The Landbook app has fan modes:
 
-- Normal
-- Natural
-- Sleep
-- Auto
+* Normal
+* Natural
+* Sleep
+* Auto
 
-Mode support is still being tested. Some captured packets appear to be status updates instead of working control commands, so mode control may not work reliably yet.
+Example entity:
+
+```
+select.kitchen_fan_mode
+```
+
+Mode support depends on the fan model and Landbook / NetPrisma TSL behavior.
+
+## TSL mapping notes
+
+The integration uses known Landbook / NetPrisma TSL property mappings for the OmniBreeze fan.
+
+Known mappings:
+
+```
+switch           id 1   → off 0x0008 / on 0x0009
+working_mode     id 2   → 0x0012
+wind_speed       id 3   → 0x001A
+swing_wind       id 5   → off 0x0028 / on 0x0029
+sound            id 13  → off 0x0068 / on 0x0069
+screen_display   id 15  → off 0x0078 / on 0x0079
+countdown        id 22  → 0x00B2
+```
+
+These were tested against the Costco OmniBreeze Wi-Fi Tower Fan using the Landbook / NetPrisma cloud API.
+
+## Options
+
+The integration includes an options menu under:
+
+```
+Settings → Devices & services → OmniBreeze Fan → Configure
+```
+
+Current options:
+
+* Scan interval
+* Auto mute fan sound on startup
+* Show diagnostic sensors
+* Fan speed count
+
+## Fan speed count
+
+During setup, the integration includes a `fan_speed_count` field.
+
+By default, this is set to `3`, which matches the common 3-speed OmniBreeze tower fans. If your fan has more speeds, change this value during setup.
+
+Examples:
+
+```
+3-speed fan: fan_speed_count = 3
+5-speed fan: fan_speed_count = 5
+```
+
+For a 5-speed fan, Home Assistant maps the speed slider like this:
+
+```
+20%  = speed 1
+40%  = speed 2
+60%  = speed 3
+80%  = speed 4
+100% = speed 5
+```
+
+The value is clamped between `1` and `12`.
+
+If you already added the integration before this option existed, remove and re-add the OmniBreeze integration from Home Assistant so the setup page asks for `fan_speed_count`.
+
+## State refresh behavior
+
+The integration refreshes fan state before sending commands.
+
+This helps when the fan was changed with the physical remote. For example:
+
+* If the fan was turned off with the remote, Home Assistant can detect that before sending another command.
+* If a speed is selected while the fan is off, the integration sends the speed command first, then powers the fan on.
+* If sound is on while the fan is running, the integration can send `sound_off` after supported commands to reduce beeps.
+
+State still depends on the Landbook / NetPrisma cloud API, so updates may take a few seconds.
+
+## Auto mute
+
+The integration can send `sound_off` once when it starts.
+
+This helps reduce the annoying fan beep when possible. Some beep behavior is still controlled by the fan firmware and may not be fully suppressible in software.
+
+If the user manually turns the sound switch back on, the integration leaves it on until Home Assistant, the integration, or the fan state changes again.
 
 ## Screenshots
 
@@ -130,24 +267,24 @@ This HACS integration is for users who want native Home Assistant entities witho
 
 The original Docker dashboard and REST API bridge are available here:
 
-**OmniBreeze Fan Dashboard**  
+**OmniBreeze Fan Dashboard**
 https://github.com/abdoomaster/OmniBreeze-fan-dashboard
 
 Use the Docker dashboard if you want:
 
-- A standalone local web dashboard
-- A REST API bridge
-- Docker Compose deployment
-- Home Assistant YAML examples
-- A setup that can also be used outside Home Assistant
+* A standalone local web dashboard
+* A REST API bridge
+* Docker Compose deployment
+* Home Assistant YAML examples
+* A setup that can also be used outside Home Assistant
 
 ## Known limitations
 
-- Requires internet access
-- Depends on the Landbook / NetPrisma cloud API
-- May break if the vendor changes login, API endpoints, MQTT behavior, or app signing
-- Fan mode control is still experimental
-- Currently tested with the Costco OmniBreeze Wi-Fi Tower Fan
+* Requires internet access
+* Depends on the Landbook / NetPrisma cloud API
+* May break if the vendor changes login, API endpoints, MQTT behavior, TSL mappings, or app signing
+* Some beep behavior may be controlled by the fan firmware and may not be fully suppressible
+* Currently tested with the Costco OmniBreeze Wi-Fi Tower Fan
 
 ## Troubleshooting
 
@@ -161,39 +298,26 @@ Check Home Assistant logs for `omnibreeze` errors. This usually means a missing 
 
 ### Fan controls work but state is delayed
 
-The integration polls the cloud API. State may take a few seconds to refresh.
+The integration uses the Landbook / NetPrisma cloud API. State may take a few seconds to refresh.
+
+### Display light or countdown does not appear
+
+Restart Home Assistant after updating. Then open the OmniBreeze device page under:
+
+```
+Settings → Devices & services → OmniBreeze Fan → Devices
+```
+
+New entities may appear disabled or hidden depending on Home Assistant’s entity registry behavior.
 
 ### Beep still happens
 
-The integration turns the fan sound setting off on startup. Some beep behavior may still be controlled by the fan firmware and may not be fully suppressible.
+The integration can turn the fan sound setting off, but some beep behavior is controlled by the fan firmware. On some fans, the beep may still happen even after sending `sound_off`.
 
 ### Mode always goes back to Normal
 
-Mode support is still experimental. The app packets captured so far may be state reports rather than valid control commands.
+Mode support depends on the fan model and the Landbook / NetPrisma TSL behavior. If mode control does not work correctly on your model, open an issue with logs and your fan model.
 
 ## Disclaimer
 
 This is an unofficial community integration. It is not affiliated with OmniBreeze, Costco, Landbook, or NetPrisma.
-
-## Fan speed count
-
-During setup, the integration includes a `fan_speed_count` field.
-
-By default, this is set to `3`, which matches the common 3-speed OmniBreeze tower fans. If your fan has more speeds, change this value during setup.
-
-Examples:
-
-    3-speed fan: fan_speed_count = 3
-    5-speed fan: fan_speed_count = 5
-
-For a 5-speed fan, Home Assistant maps the speed slider like this:
-
-    20%  = speed 1
-    40%  = speed 2
-    60%  = speed 3
-    80%  = speed 4
-    100% = speed 5
-
-The value is clamped between `1` and `12`.
-
-If you already added the integration before this option existed, remove and re-add the OmniBreeze integration from Home Assistant so the setup page asks for `fan_speed_count`.
