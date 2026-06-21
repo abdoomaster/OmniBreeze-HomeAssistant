@@ -120,42 +120,21 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
         await self.coordinator.async_request_refresh()
         return True
 
-
-    def _set_optimistic_power(self, power: str) -> None:
-        """Update Home Assistant UI immediately while the cloud command is in flight."""
-        if not getattr(self, "device", None):
-            return
-
-        if not isinstance(getattr(self.device, "state", None), dict):
-            self.device.state = {}
-
-        self.device.state["power"] = power
-        self.async_write_ha_state()
-
-    def _set_optimistic_percentage(self, percentage: int) -> None:
-        """Update fan percentage immediately while the cloud command is in flight."""
-        if not getattr(self, "device", None):
-            return
-
-        if not isinstance(getattr(self.device, "state", None), dict):
-            self.device.state = {}
-
-        self.device.state["power"] = "on"
-        self.device.state["speed"] = max(1, min(5, round((percentage or 0) / 20)))
-        self.async_write_ha_state()
-
     async def async_turn_on(
         self,
         percentage: int | None = None,
         preset_mode: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
-        """Turn the fan on with optimistic Home Assistant UI update."""
         if percentage is not None:
             await self.async_set_percentage(percentage)
             return
 
-        self._set_optimistic_power("on")
+        await self._async_refresh_current_state()
+
+        if self.is_on:
+            await self._async_mute_if_running()
+            return
 
         await self.hass.async_add_executor_job(
             self.api.send_action,
@@ -163,36 +142,67 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
             "on",
         )
 
-        # Confirm with cloud state shortly after command.
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(0.7)
         await self.coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **kwargs) -> None:
-        """Turn the fan off with optimistic Home Assistant UI update."""
-        self._set_optimistic_power("off")
+        if self.is_on:
+            await self._async_mute_if_running()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._async_refresh_current_state()
+
+        # If the physical remote already turned the fan off, update HA and
+        # still mute sound if the Wi-Fi module reports sound on.
+        if not self.is_on:
+            await self._async_mute_if_running()
+            self.async_write_ha_state()
+            return
 
         await self.hass.async_add_executor_job(
             self.api.send_action,
             self.device,
             "off",
         )
-
-        # Confirm with cloud state shortly after command.
-        await asyncio.sleep(1.0)
         await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
-        """Set fan speed with optimistic Home Assistant UI update."""
-        self._set_optimistic_percentage(percentage)
+        await self._async_refresh_current_state()
+
+        if percentage <= 0:
+            await self.async_turn_off()
+            return
+
+        was_off = not self.is_on
+
+        # Mute immediately if sound is on, even when fan power is off.
+        await self._async_mute_if_running()
+
+        speed = round((percentage / 100) * self._attr_speed_count)
+        speed = max(1, min(self._attr_speed_count, speed))
+        action = f"speed:{speed}"
 
         await self.hass.async_add_executor_job(
-            self.api.set_percentage,
+            self.api.send_action,
             self.device,
-            percentage,
+            action,
         )
 
-        await asyncio.sleep(1.0)
+        # OmniBreeze quirk:
+        # If speed is selected while off, the fan may beep but stay off.
+        # Send speed first, then power on.
+        if was_off:
+            await asyncio.sleep(0.5)
+            await self.hass.async_add_executor_job(
+                self.api.send_action,
+                self.device,
+                "on",
+            )
+
+        await asyncio.sleep(0.7)
         await self.coordinator.async_request_refresh()
+
+        if self.is_on:
+            await self._async_mute_if_running()
 
     async def async_oscillate(self, oscillating: bool) -> None:
         await self._async_refresh_current_state()

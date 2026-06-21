@@ -321,3 +321,109 @@ Mode support depends on the fan model and the Landbook / NetPrisma TSL behavior.
 ## Disclaimer
 
 This is an unofficial community integration. It is not affiliated with OmniBreeze, Costco, Landbook, or NetPrisma.
+
+## OmniBreeze Lovelace Card
+
+Version `v0.4.0` adds an optional custom Lovelace card for OmniBreeze fans.
+
+The card supports:
+
+- Compact fan dashboard view
+- Popup controls
+- Power on/off
+- Speed percentage slider
+- Oscillation / swing
+- Sound on/off
+- Display light on/off
+- Mode selection
+- Countdown timer selection
+- Temperature display
+- Visual editor support
+
+### Card file
+
+The card is included in the repository at:
+
+```text
+custom_components/omnibreeze/www/omnibreeze-fan-card.js
+```
+
+### Local installation
+
+For local testing, copy the card to Home Assistant's `www` folder:
+
+```bash
+mkdir -p /config/www/omnibreeze
+cp custom_components/omnibreeze/www/omnibreeze-fan-card.js /config/www/omnibreeze/
+```
+
+If your Home Assistant Docker config path is `/var/lib/homeassistant`, use:
+
+```bash
+mkdir -p /var/lib/homeassistant/www/omnibreeze
+cp custom_components/omnibreeze/www/omnibreeze-fan-card.js /var/lib/homeassistant/www/omnibreeze/
+```
+
+Then add this Lovelace resource:
+
+```text
+/local/omnibreeze/omnibreeze-fan-card.js?v=0.4.0
+```
+
+Resource type:
+
+```text
+JavaScript module
+```
+
+### Example card
+
+```yaml
+type: custom:omnibreeze-fan-card
+entity: fan.kitchen_fan_2
+name: Kitchen Fan
+temperature: sensor.kitchen_fan_temperature
+sound: switch.kitchen_fan_sound
+display: light.kitchen_fan_display
+mode: select.kitchen_fan_mode
+countdown: select.kitchen_fan_countdown
+```
+
+### Three-fan example
+
+```yaml
+type: grid
+columns: 3
+square: false
+cards:
+  - type: custom:omnibreeze-fan-card
+    entity: fan.sami
+    name: Sami Fan
+    temperature: sensor.sami_fan_temperature
+    sound: switch.sami_fan_sound
+    display: light.sami_fan_display
+    mode: select.sami_fan_mode
+    countdown: select.sami_fan_countdown
+
+  - type: custom:omnibreeze-fan-card
+    entity: fan.kitchen_fan_2
+    name: Kitchen Fan
+    temperature: sensor.kitchen_fan_temperature
+    sound: switch.kitchen_fan_sound
+    display: light.kitchen_fan_display
+    mode: select.kitchen_fan_mode
+    countdown: select.kitchen_fan_countdown
+
+  - type: custom:omnibreeze-fan-card
+    entity: fan.2_nd_floor_bedroom_fanu
+    name: Bedroom Fan
+    temperature: sensor.bedroom_fan_temperature
+    sound: switch.bedroom_fan_sound
+    display: light.bedroom_fan_display
+    mode: select.bedroom_fan_mode
+    countdown: select.bedroom_fan_countdown
+```
+
+### Notes
+
+The card is optional. The integration still creates normal Home Assistant entities, so you can also use standard Tile cards, Mushroom cards, or any other Lovelace card.

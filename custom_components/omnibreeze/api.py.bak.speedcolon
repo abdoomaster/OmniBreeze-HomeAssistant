@@ -432,18 +432,17 @@ class OmniBreezeApi:
             return self.send_action(device, "off")
 
         if pct <= 20:
-            speed = 1
+            action = "speed_1"
         elif pct <= 40:
-            speed = 2
+            action = "speed_2"
         elif pct <= 60:
-            speed = 3
+            action = "speed_3"
         elif pct <= 80:
-            speed = 4
+            action = "speed_4"
         else:
-            speed = 5
+            action = "speed_5"
 
-        return self.send_action(device, f"speed:{speed}")
-
+        return self.send_action(device, action)
 
     def send_action(self, device: OmniBreezeDevice, action: str) -> None:
         if action.startswith("speed:"):

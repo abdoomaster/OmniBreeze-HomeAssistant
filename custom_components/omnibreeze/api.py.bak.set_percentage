@@ -412,39 +412,6 @@ class OmniBreezeApi:
 
         return b"\xaa\xaa" + len(body).to_bytes(2, "big") + body
 
-
-    def set_percentage(self, device, percentage: int) -> None:
-        """Set fan speed from Home Assistant percentage.
-
-        OmniBreeze uses 5 speed levels:
-        1 = 20%
-        2 = 40%
-        3 = 60%
-        4 = 80%
-        5 = 100%
-        """
-        try:
-            pct = int(percentage or 0)
-        except (TypeError, ValueError):
-            pct = 0
-
-        if pct <= 0:
-            return self.send_action(device, "off")
-
-        if pct <= 20:
-            speed = 1
-        elif pct <= 40:
-            speed = 2
-        elif pct <= 60:
-            speed = 3
-        elif pct <= 80:
-            speed = 4
-        else:
-            speed = 5
-
-        return self.send_action(device, f"speed:{speed}")
-
-
     def send_action(self, device: OmniBreezeDevice, action: str) -> None:
         if action.startswith("speed:"):
             speed = int(action.split(":", 1)[1])
