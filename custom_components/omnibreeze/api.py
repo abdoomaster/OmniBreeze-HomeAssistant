@@ -5,6 +5,7 @@ import hashlib
 import json
 import random
 import socket
+import secrets
 import ssl
 import string
 import time
@@ -438,7 +439,16 @@ class OmniBreezeApi:
         if not self.uid:
             raise OmniBreezeApiError("Could not autodetect UID")
 
-        client_id = f"qu_{self.uid}_{int(time.time() * 1000)}"
+        # client_id = f"qu_{self.uid}_{int(time.time() * 1000)}"
+        prefix = f"qu_{self.uid}_"
+
+        # MQTT 3.1.1 brokers commonly limit client IDs to 23 bytes.
+        # Use a random suffix to avoid collisions when HA sends commands
+        # to multiple fans concurrently.
+        remaining = max(1, 23 - len(prefix))
+        suffix = secrets.token_hex(8)[:remaining]
+
+        client_id = prefix + suffix
         password = self.get_auth_header()
 
         ws = websocket.create_connection(
