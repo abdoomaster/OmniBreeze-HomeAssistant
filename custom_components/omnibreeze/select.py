@@ -6,29 +6,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
-
-
-MODE_TO_VALUE = {
-    "Normal": 0,
-    "Natural": 1,
-    "Sleep": 2,
-    "Auto": 3,
-}
-
-VALUE_TO_MODE = {
-    0: "Normal",
-    1: "Natural",
-    2: "Sleep",
-    3: "Auto",
-}
-
-MODE_TO_ACTION = {
-    "Normal": "mode_normal",
-    "Natural": "mode_natural",
-    "Sleep": "mode_sleep",
-    "Auto": "mode_auto",
-}
+from .const import (
+    DOMAIN,
+    MODE_TO_ACTION,
+    MODE_TO_VALUE,
+    VALUE_TO_MODE,
+)
 
 
 COUNTDOWN_TO_VALUE = {

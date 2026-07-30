@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import OmniBreezeDevice
-from .const import DOMAIN
+from .const import DOMAIN, MODE_TO_ACTION, MODE_TO_VALUE, VALUE_TO_MODE
 
 
 async def async_setup_entry(
@@ -34,9 +34,11 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
     _attr_supported_features = (
         FanEntityFeature.SET_SPEED
         | FanEntityFeature.OSCILLATE
+        | FanEntityFeature.PRESET_MODE
         | FanEntityFeature.TURN_ON
         | FanEntityFeature.TURN_OFF
     )
+    _attr_preset_modes = list(MODE_TO_VALUE)
 
     def __init__(self, coordinator, api, device_key: str, fan_speed_count: int) -> None:
         super().__init__(coordinator)
@@ -81,6 +83,13 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
     @property
     def oscillating(self) -> bool | None:
         return self.state_data.get("oscillation") == "on"
+
+    @property
+    def preset_mode(self) -> str | None:
+        try:
+            return VALUE_TO_MODE.get(int(self.state_data.get("mode")))
+        except (TypeError, ValueError):
+            return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -128,8 +137,14 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
     ) -> None:
         if percentage is not None:
             await self.async_set_percentage(percentage)
-            return
+        else:
+            await self._async_power_on()
 
+        # Applied last, so the mode survives the power-on/speed sequence above.
+        if preset_mode is not None:
+            await self.async_set_preset_mode(preset_mode)
+
+    async def _async_power_on(self) -> None:
         await self._async_refresh_current_state()
 
         if self.is_on:
@@ -147,6 +162,17 @@ class OmniBreezeFan(CoordinatorEntity, FanEntity):
 
         if self.is_on:
             await self._async_mute_if_running()
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        if preset_mode not in MODE_TO_ACTION:
+            raise ValueError(f"Unsupported preset mode: {preset_mode}")
+
+        await self.hass.async_add_executor_job(
+            self.api.send_action,
+            self.device,
+            MODE_TO_ACTION[preset_mode],
+        )
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         await self._async_refresh_current_state()

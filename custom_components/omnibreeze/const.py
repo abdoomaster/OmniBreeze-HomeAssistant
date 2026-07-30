@@ -16,3 +16,19 @@ API_BASE = "https://iot-api.netprisma.us"
 MQTT_URL = "wss://iot-south.netprisma.us:8443/ws/v2"
 
 PLATFORMS = ["fan", "sensor", "switch", "select", "light"]
+
+MODE_TO_VALUE = {
+    "Normal": 0,
+    "Natural": 1,
+    "Sleep": 2,
+    "Auto": 3,
+}
+
+VALUE_TO_MODE = {value: key for key, value in MODE_TO_VALUE.items()}
+
+MODE_TO_ACTION = {
+    "Normal": "mode_normal",
+    "Natural": "mode_natural",
+    "Sleep": "mode_sleep",
+    "Auto": "mode_auto",
+}
