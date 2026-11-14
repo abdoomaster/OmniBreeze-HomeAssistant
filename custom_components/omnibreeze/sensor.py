@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature, PERCENTAGE, SIGNAL_STRENGTH_DECIBELS_MILLIWATT
 from homeassistant.core import HomeAssistant
@@ -15,16 +15,19 @@ SENSORS = {
         "name": "Temperature",
         "device_class": SensorDeviceClass.TEMPERATURE,
         "unit": UnitOfTemperature.FAHRENHEIT,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
     "battery": {
         "name": "Battery",
         "device_class": SensorDeviceClass.BATTERY,
         "unit": PERCENTAGE,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
     "signal_strength": {
         "name": "Signal Strength",
         "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
         "unit": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        "state_class": SensorStateClass.MEASUREMENT,
     },
 }
 
@@ -59,6 +62,7 @@ class OmniBreezeSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"omnibreeze_{device_key}_{sensor_key}"
         self._attr_device_class = meta["device_class"]
         self._attr_native_unit_of_measurement = meta["unit"]
+        self._attr_state_class  = meta["state_class"]
 
     @property
     def device(self):
